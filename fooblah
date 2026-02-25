@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
-"""
-A small ASCII turtle wandering the terminal at random.
-Usage: ./fooblah [seconds]   (default: 30)
-"""
+"""A small ASCII turtle wandering the terminal at random for 10 seconds."""
 import curses
 import random
 import time
-import sys
 
 # Turtle art — three variants based on horizontal direction
 TURTLE = {
@@ -74,23 +70,5 @@ def main(stdscr, duration):
         stdscr.refresh()
         time.sleep(0.1)
 
-    stdscr.erase()
-    msg = "* done *"
-    try:
-        stdscr.addstr(sh // 2, (sw - len(msg)) // 2, msg,
-                      curses.color_pair(1) | curses.A_BOLD)
-    except curses.error:
-        pass
-    stdscr.refresh()
-    time.sleep(1)
-
-
 if __name__ == "__main__":
-    duration = 30
-    if len(sys.argv) > 1:
-        try:
-            duration = int(sys.argv[1])
-        except ValueError:
-            print(f"Usage: {sys.argv[0]} [seconds]", file=sys.stderr)
-            sys.exit(1)
-    curses.wrapper(main, duration)
+    curses.wrapper(main, 10)
