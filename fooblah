@@ -1,5 +1,96 @@
-#!/bin/sh
-while true; do
-  echo "hello"
-  echo ""
-done
+#!/usr/bin/env python3
+"""
+A small ASCII turtle wandering the terminal at random.
+Usage: ./fooblah [seconds]   (default: 30)
+"""
+import curses
+import random
+import time
+import sys
+
+# Turtle art — three variants based on horizontal direction
+TURTLE = {
+    "r": [" __ ", "/oo>", "\\__/"],   # moving right
+    "l": [" __ ", "<oo\\", "\\__/"],  # moving left
+    "n": [" __ ", "/oo\\", "\\__/"],  # neutral / vertical
+}
+TW = 4  # turtle art width
+TH = 3  # turtle art height
+
+
+def draw(stdscr, y, x, art, color):
+    for i, row in enumerate(art):
+        try:
+            stdscr.addstr(y + i, x, row, color)
+        except curses.error:
+            pass
+
+
+def main(stdscr, duration):
+    curses.curs_set(0)
+    stdscr.nodelay(1)
+    curses.start_color()
+    curses.use_default_colors()
+    curses.init_pair(1, curses.COLOR_GREEN, -1)   # turtle
+    curses.init_pair(2, curses.COLOR_WHITE, -1)   # HUD
+
+    sh, sw = stdscr.getmaxyx()
+    y = (sh - TH) // 2
+    x = (sw - TW) // 2
+    dy, dx = 0, 0
+    face = "n"
+    start = time.time()
+
+    while True:
+        elapsed = time.time() - start
+        if elapsed >= duration:
+            break
+
+        # Pick new direction ~30% of the time for organic wandering
+        if random.random() < 0.3:
+            dy = random.randint(-1, 1)
+            dx = random.randint(-1, 1)
+
+        y = max(0, min(sh - TH - 1, y + dy))
+        x = max(0, min(sw - TW - 1, x + dx))
+
+        if dx > 0:
+            face = "r"
+        elif dx < 0:
+            face = "l"
+        else:
+            face = "n"
+
+        stdscr.erase()
+        draw(stdscr, y, x, TURTLE[face], curses.color_pair(1) | curses.A_BOLD)
+
+        remaining = max(0, duration - elapsed)
+        hud = f" {remaining:.0f}s "
+        try:
+            stdscr.addstr(sh - 1, sw - len(hud) - 1, hud, curses.color_pair(2))
+        except curses.error:
+            pass
+
+        stdscr.refresh()
+        time.sleep(0.1)
+
+    stdscr.erase()
+    msg = "* done *"
+    try:
+        stdscr.addstr(sh // 2, (sw - len(msg)) // 2, msg,
+                      curses.color_pair(1) | curses.A_BOLD)
+    except curses.error:
+        pass
+    stdscr.refresh()
+    time.sleep(1)
+
+
+if __name__ == "__main__":
+    duration = 30
+    if len(sys.argv) > 1:
+        try:
+            duration = int(sys.argv[1])
+        except ValueError:
+            print(f"Usage: {sys.argv[0]} [seconds]", file=sys.stderr)
+            sys.exit(1)
+    curses.wrapper(main, duration)
